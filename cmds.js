@@ -191,65 +191,55 @@ exports.testCmd = (rl,id) => {
 };
 exports.playCmd = rl => {
 
-    const generar = () => {
-        let d = Math.round(Math.random()*toBeResolved.length);
-    }
+
+
 
     let score = 0;
     let toBeResolved = [];
-    for ( let i = 0; i < 4 ;++i){
-       toBeResolved.push(i);
+    model.getAll().forEach((quiz, id) => {
+        toBeResolved [id] = quiz;
+});
 
-    };
+
     const playOne = () =>{
 
 
-    if (toBeResolved.length === 0){
-        log("no hay nada que preguntar","red");
+        if (toBeResolved.length === 0){
+            log("no hay nada que preguntar","red");
 
-        rl.prompt();
-    }else{
+            rl.prompt();
+        }else{
+            try{
+                let d = Math.floor(Math.random()*toBeResolved.length);
+                const quiz = model.getByIndex(d);
+                rl.question("¿"+quiz.question+"? ",answer => {
+                    if( answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()){
+                    log("Su respuesta es correcta ","green");
+                    biglog('Correcto','green');
 
-        let m = 0;
-        let d = Math.round(Math.random()*toBeResolved.length);
-        for ( let i = 0; i < toBeResolved.length + 1 ;++i) {
-            if (toBeResolved[i] === d) {
-                let quiz = model.getByIndex(d);
-                toBeResolved = toBeResolved.filter(elem => elem != d);
-
-
-                rl.question("¿" + quiz.question + "? ", answer => {
-                    if(answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()
-            )
-                {
-                    log("Su respuesta es correcta ", "green");
-                    log('Correcto', 'green');
-                    score = score + 1;
-                    console.log(`"su puntuacion es de :"${score}`);
+                    score ++;
+                    toBeResolved.splice(d,1);
                     playOne();
-                }
-            else
-                {
-                    log("Su respuesta es incorrecta ", "red");
-                    console.log(`"su puntuacion es de :"${score}`);
+                }else{
+                    log("Su respuesta es incorrecta ","red");
+                    biglog('Incorrecto','red');
+
                     rl.prompt();
                 }
 
 
+
             });
 
-            } else {
-             m = m +1;
-             if(m > toBeResolved.length){
-                 generar;
-             }
-
-            };
-        };
-};
+            }catch (error) {
+                errorlog(error.message);
+                rl.prompt();
+            }
+        }
     };
+
     playOne();
-} ;
+};
 exports.creditsCmd = rl =>{
     console.log("Autor de la práctica: ");
     log(" PABLO Bosco Moya Rodriguez","blue");
