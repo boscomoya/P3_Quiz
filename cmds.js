@@ -165,29 +165,43 @@ exports.editCmd = (rl ,id) => {
 };
 
 exports.testCmd = (rl,id) => {
-    if (typeof id === "undefined"){
-        errorlog(`Falta el parametro id.`);
-    }else{
-        try{
-            const quiz = model.getByIndex(id);
-            rl.question("¿"+quiz.question+"? ",answer => {
-           if( answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()){
-               log("Su respuesta es correcta ","green");
-               biglog('Correcto','green');
-            }else{
-                log("Su respuesta es incorrecta ","red");
-                biglog('Incorrecto','red');
-            }
-
-            rl.prompt();
-
-        });
-
-        }catch (error){
-            errorlog(error.message);
-            rl.prompt();
-        }
+    validateId(id)
+        .then(id => models.quiz.findById(id))
+.then(quiz => {
+        if (!quiz){
+        throw new Error(`Ǹo existe un quiz asociado al id=${id}.`);
     }
+
+    log(`[${colorize(quiz.id,'magenta')}]: ${quiz.question}: `);
+    return makeQuestion(rl, ' Introduzca la respuesta: ')
+        .then(r => {
+
+        if(quiz.answer.toUpperCase().trim() === r.toUpperCase().trim()){
+
+        log("Su respuesta es correcta");
+
+        biglog('Correcta', 'green');
+
+    } else{
+
+        log("Su respuesta es incorrecta");
+
+        biglog('Incorrecta', 'red');
+
+    }
+
+});
+})
+.catch(Sequelize.ValidationError, error => {
+        errorlog('El quiz es erróneo:');
+    error.errors.forEach(({message}) => errorlog(message));
+})
+.catch(error => {
+        errorlog(error.message);
+})
+.then(() => {
+        rl.prompt();
+});
 };
 exports.playCmd = rl => {
 
