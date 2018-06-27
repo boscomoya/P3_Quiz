@@ -196,50 +196,57 @@ exports.playCmd = rl => {
 
     let score = 0;
     let toBeResolved = [];
-    model.getAll().forEach((quiz, id) => {
-        toBeResolved [id] = quiz;
-});
+    model.quiz.findAll({raw: true})
+        .then(quizzes => {
+            toBeResolved = quizzes;
+})
 
 
     const playOne = () =>{
 
 
-        if (toBeResolved.length === 0){
-            log("no hay nada que preguntar","red");
-
-            rl.prompt();
-        }else{
-            try{
-                let d = Math.floor(Math.random()*toBeResolved.length);
-                const quiz = model.getByIndex(d);
-                rl.question("¿"+quiz.question+"? ",answer => {
-                    if( answer.toLowerCase().trim() === quiz.answer.toLowerCase().trim()){
-                    log("Su respuesta es correcta ","green");
-                    biglog('Correcto','green');
-
-                    score ++;
-                    toBeResolved.splice(d,1);
-                    playOne();
-                }else{
-                    log("Su respuesta es incorrecta ","red");
-                    biglog('Incorrecto','red');
-
-                    rl.prompt();
-                }
-
-
-
-            });
-
-            }catch (error) {
-                errorlog(error.message);
-                rl.prompt();
-            }
+        return new Sequelize.Promise((resolve,reject) => {
+            if(toBeResolved.length <=0){
+            console.log("No hay nada más que preguntar.");
+            console.log("Fin del examen. Aciertos:");
+            resolve();
+            biglog(score, 'magenta');
+            return;
         }
-    };
+        let id = Math.floor(Math.random()*toBeResolved.length);
+        let quiz = toBeResolved[id];
+        toBeResolved.splice(id,1);
+        makeQuestion(rl, colorize(quiz.question + '? ', 'red'))
+            .then(response => {
+            if(response.toLowerCase().trim() === quiz.answer.toLowerCase().trim()){
+            score++;
+            console.log("CORRECTO - Lleva ",score, "aciertos");
+            resolve(playOne());
+        } else {
+            console.log("INCORRECTO.");
+            console.log("Fin del examen. Aciertos:");
+            resolve();
+            biglog(score, 'magenta');
+        }
+    })
+    })
+    }
 
-    playOne();
+    models.quiz.findAll({raw: true})
+        .then(quizzes => {
+        toBeResolved = quizzes;
+})
+.then(() => {
+        return playOne();
+})
+.catch(error => {
+        console.log(error);
+})
+.then(() => {
+        rl.prompt();
+})
 };
+
 exports.creditsCmd = rl =>{
     console.log("Autor de la práctica: ");
     log(" PABLO Bosco Moya Rodriguez","blue");
